@@ -3,7 +3,9 @@ DROP SCHEMA IF EXISTS book_paradise CASCADE;
 CREATE SCHEMA IF NOT EXISTS book_paradise;
 
 CREATE TABLE IF NOT EXISTS book_paradise.UserInfo (
-    id SERIAL PRIMARY KEY
+    id SERIAL PRIMARY KEY,
+    login TEXT UNIQUE NOT NULL,
+    hashed_password TEXT NOT NULL
 );
 
 -- Assume that certain book have the same size in all publications for simplicity
@@ -21,7 +23,7 @@ CREATE TYPE book_paradise.right_kind as ENUM (
     'see portfolio'
 );
 
-CREATE TABLE IF NOT EXISTS book_paradise.user_right (
+CREATE TABLE IF NOT EXISTS book_paradise.UserRight (
     user_from INT REFERENCES book_paradise.UserInfo,
     user_to INT REFERENCES book_paradise.UserInfo,
     kind book_paradise.right_kind,
@@ -86,3 +88,14 @@ AS $$
     WHERE p.user_id = input_user_id
     GROUP BY p.book_id, b.id
 $$;
+
+WITH pwd AS (
+    SELECT generate_series(1, 3) AS id,  UNNEST(ARRAY['$2b$12$KTguiTfEL.o3RmgyRGSASOK9ycaAMMjkiWLJbeSWGDdEwbAlG20rG',
+        '$2b$12$Akpcvgq7rW1wzSs9zaAMhuMWbQ7HbjV.u5bSk6B70pEtsL2pYp4XC',
+        '$2b$12$hU2X49aYYdNL58s.cwm5MORsi83aLsWXLwK1OzzyIR46UA.Nftavq']) AS pwd
+), logins AS (
+    SELECT generate_series(1, 3) AS id, UNNEST(ARRAY['sam-victor', 'victor', 'sam']) as log
+)
+INSERT INTO book_paradise.UserInfo(login, hashed_password)
+SELECT log, pwd
+FROM pwd JOIN logins ON pwd.id = logins.id;

@@ -18,17 +18,17 @@ class UserRepository(abc.ABC):
 
 class UserRepositoryImpl(UserRepository):
     def __init__(self, db: databases.Database):
-        self.db = db
+        self.__db = db
 
     async def get_by_login(self, login: str):
         query = UserInfoInDb.select(UserInfoInDb.c.login == login)
 
-        return await self.db.fetch_one(query=query)
+        return await self.__db.fetch_one(query=query)
 
     async def create(self, user: UserWithPassword):
         query = UserInfoInDb.insert().values(**user.dict())
 
-        return await self.db.execute(query=query)
+        return await self.__db.execute(query=query)
 
 
 def get_user_repository(db=Depends(get_db)) -> UserRepository:

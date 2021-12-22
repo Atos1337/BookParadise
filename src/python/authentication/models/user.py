@@ -9,5 +9,5 @@ class UserWithPassword(User):
     password: str
 
 
-class UserOut(User):
+class UserWithId(User):
     id: int

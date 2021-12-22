@@ -2,17 +2,14 @@ from datetime import timedelta
 
 import asyncpg.exceptions
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from .models.token import Token
-from .models.user import UserWithPassword, UserOut
+from .models.user import UserWithPassword, UserWithId
 from .service import get_authentication_service, AuthenticationService
 from fastapi.security import OAuth2PasswordRequestForm
 from src.python.database import db
-from . import ACCESS_TOKEN_EXPIRE_MINUTES
+from . import ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 
 auth = APIRouter()
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/sign-in")
 
 
 @auth.on_event("startup")
@@ -42,13 +39,12 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@auth.get("/me", response_model=UserOut)
-async def read_users_me(authentication_service: AuthenticationService = Depends(get_authentication_service),
-                        token=Depends(oauth2_scheme)):
-    return await authentication_service.get_current_user(token)
+@auth.get("/me", response_model=UserWithId)
+async def read_users_me(user: UserWithId = Depends(get_current_user)):
+    return user
 
 
-@auth.post("/sign-up", response_model=UserOut)
+@auth.post("/sign-up", response_model=UserWithId)
 async def sing_up_new_user(user: UserWithPassword,
                            authentication_service: AuthenticationService = Depends(get_authentication_service)):
     try:
@@ -59,4 +55,4 @@ async def sing_up_new_user(user: UserWithPassword,
             detail="User with this login already exist"
         )
 
-    return UserOut(id=user_id, login=user.login)
+    return UserWithId(id=user_id, login=user.login)

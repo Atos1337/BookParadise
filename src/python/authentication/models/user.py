@@ -5,13 +5,9 @@ class User(BaseModel):
     login: str
 
 
-class UserIn(User):
+class UserWithPassword(User):
     password: str
 
 
-class UserInDB(User):
-    hashed_password: str
-
-
-class UserOut(UserIn):
+class UserOut(User):
     id: int

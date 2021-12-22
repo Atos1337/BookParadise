@@ -5,7 +5,7 @@ CREATE SCHEMA IF NOT EXISTS book_paradise;
 CREATE TABLE IF NOT EXISTS book_paradise.UserInfo (
     id SERIAL PRIMARY KEY,
     login TEXT UNIQUE NOT NULL,
-    hashed_password TEXT NOT NULL
+    password TEXT NOT NULL
 );
 
 -- Assume that certain book have the same size in all publications for simplicity
@@ -96,6 +96,15 @@ WITH pwd AS (
 ), logins AS (
     SELECT generate_series(1, 3) AS id, UNNEST(ARRAY['sam-victor', 'victor', 'sam']) as log
 )
-INSERT INTO book_paradise.UserInfo(login, hashed_password)
+INSERT INTO book_paradise.UserInfo(login, password)
 SELECT log, pwd
 FROM pwd JOIN logins ON pwd.id = logins.id;
+
+INSERT INTO book_paradise.Book(title, author, pages)
+SELECT title, author, (700 * random())::INTEGER
+FROM (
+    SELECT unnest(ARRAY['Война и мир', '1984', 'Улисс', 'Лолита', 'Звук и ярость', 'Человек-невидимка', 'На маяк', 'Илиада', 'Одиссея', 'Божественная комедия']) AS title,
+           unnest(ARRAY['Лев Толстой', 'Джордж Оруэлл', 'Джеймс Джойс', 'Владимир Набоков', 'Уильям Фолкнер', 'Ральф Эллисон', 'Вирджиния Вулф', 'Гомер', 'Гомер', 'Данте Алигьери']) AS author
+) as ta;
+
+table book_paradise.Book;

@@ -1,15 +1,18 @@
 from datetime import timedelta
 
+import asyncpg.exceptions
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from .models.token import Token
-from .models.user import User, UserIn, UserOut, UserInDB
-from .api import authenticate_user, ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, get_current_user, \
-    get_password_hash
+from .models.user import UserWithPassword, UserOut
+from .service import get_authentication_service, AuthenticationService
 from fastapi.security import OAuth2PasswordRequestForm
-from src.python.database.repositories.user import UserRepository, get_user_repository
-from src.python.database.api import db
+from src.python.database import db
+from . import ACCESS_TOKEN_EXPIRE_MINUTES
 
 auth = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/sign-in")
 
 
 @auth.on_event("startup")
@@ -22,10 +25,10 @@ async def shutdown():
     await db.disconnect()
 
 
-@auth.post("/token", response_model=Token)
+@auth.post("/sign-in", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
-                                 user_repository: UserRepository = Depends(get_user_repository)):
-    user = await authenticate_user(user_repository, form_data.username, form_data.password)
+                                 authentication_service: AuthenticationService = Depends(get_authentication_service)):
+    user = await authentication_service.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -33,21 +36,27 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
+    access_token = authentication_service.create_access_token(
         data={"sub": user.login}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@auth.get("/me/", response_model=User)
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    return current_user
+@auth.get("/me", response_model=UserOut)
+async def read_users_me(authentication_service: AuthenticationService = Depends(get_authentication_service),
+                        token=Depends(oauth2_scheme)):
+    return await authentication_service.get_current_user(token)
 
 
 @auth.post("/sign-up", response_model=UserOut)
-async def sing_up_new_user(user: UserIn, user_repository: UserRepository = Depends(get_user_repository)):
-    user_with_hashed_password = UserInDB(login=user.login, hashed_password=user.password)
-    user_with_hashed_password.hashed_password = get_password_hash(user_with_hashed_password.hashed_password)
-    user_id = await user_repository.create(user_with_hashed_password)
+async def sing_up_new_user(user: UserWithPassword,
+                           authentication_service: AuthenticationService = Depends(get_authentication_service)):
+    try:
+        user_id = await authentication_service.sign_up_user(user)
+    except asyncpg.exceptions.UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this login already exist"
+        )
 
-    return {**user.dict(), "id": user_id}
+    return UserOut(id=user_id, login=user.login)

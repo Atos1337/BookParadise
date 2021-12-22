@@ -1,21 +1,16 @@
 import uvicorn
 from fastapi import FastAPI
-from database.api import db
 from authentication.router import auth
 
-app = FastAPI()
 
-app.include_router(auth)
+def create_app():
+    app = FastAPI()
+    app.include_router(auth, prefix="/users")
+
+    return app
 
 
-# @app.on_event("startup")
-# async def startup():
-#     await db.connect()
-#
-#
-# @app.on_event("shutdown")
-# async def shutdown():
-#     await db.disconnect()
+app = create_app()
 
 
 if __name__ == "__main__":

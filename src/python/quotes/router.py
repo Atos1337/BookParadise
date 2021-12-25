@@ -4,9 +4,20 @@ from .models.quote import QuoteOut, QuoteIn, RepliedQuoteIn
 from authentication import get_current_user, UserWithId
 from .service import get_quote_service, QuoteService
 from typing import List
+from database import db
 
 
 quotes = APIRouter()
+
+
+@quotes.on_event("startup")
+async def startup():
+    await db.connect()
+
+
+@quotes.on_event("shutdown")
+async def shutdown():
+    await db.disconnect()
 
 
 @quotes.post("/quote-comment/add", response_model=int)

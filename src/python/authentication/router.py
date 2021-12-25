@@ -6,7 +6,7 @@ from .models.token import Token
 from .models.user import UserWithPassword, UserWithId
 from .service import get_authentication_service, AuthenticationService
 from fastapi.security import OAuth2PasswordRequestForm
-from src.python.database import db
+from database import db
 from . import ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 
 auth = APIRouter()

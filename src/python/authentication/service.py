@@ -11,7 +11,7 @@ from passlib.context import CryptContext
 from .models.token import TokenData
 from .models.user import UserWithPassword
 
-from src.python.authentication.repositories.user import get_user_repository, UserRepository
+from authentication.repositories.user import get_user_repository, UserRepository
 
 
 class AuthenticationService(abc.ABC):

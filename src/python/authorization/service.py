@@ -28,6 +28,9 @@ class AuthorizationServiceImpl(AuthorizationService):
         return await self.__user_right_repository.remove_right(right)
 
     async def is_exist(self, right: UserRight):
+        if right.user_to == right.user_from:
+            return True
+
         existed_right = await self.__user_right_repository.get_right(right)
 
         if existed_right is None:

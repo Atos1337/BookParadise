@@ -3,9 +3,9 @@ import abc
 import databases
 
 from fastapi import Depends
-from src.python.authorization.models.user_right import UserRight
-from src.python.authorization.database import UserRightInDb
-from src.python.database import get_db
+from authorization.models.user_right import UserRight
+from authorization.database import UserRightInDb
+from database import get_db
 
 
 class UserRightRepository(abc.ABC):
@@ -19,7 +19,7 @@ class UserRightRepository(abc.ABC):
         pass
 
 
-class UserUserRightRepositoryImpl(UserRightRepository):
+class UserRightRepositoryImpl(UserRightRepository):
     def __init__(self, db: databases.Database):
         self.__db = db
 
@@ -44,4 +44,4 @@ class UserUserRightRepositoryImpl(UserRightRepository):
 
 
 def get_user_right_repository(db: databases.Database = Depends(get_db)):
-    return UserUserRightRepositoryImpl(db)
+    return UserRightRepositoryImpl(db)

@@ -3,9 +3,9 @@ import abc
 import databases
 
 from fastapi import Depends
-from src.python.authentication.models.user import UserWithPassword
-from src.python.database import get_db
-from src.python.authentication.database import UserInfoInDb
+from authentication.models.user import UserWithPassword
+from database import get_db
+from authentication.database import UserInfoInDb
 
 
 class UserRepository(abc.ABC):

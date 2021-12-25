@@ -38,10 +38,18 @@ CREATE TABLE IF NOT EXISTS book_paradise.Quote (
     replied_quote_id INT REFERENCES book_paradise.Quote,
     CHECK (
         content IS NULL AND replied_quote_id IS NOT NULL OR
-        replied_quote_id IS NULL AND replied_quote_id IS NOT NULL
+        replied_quote_id IS NULL AND content IS NOT NULL
     ),
     book_id INT REFERENCES book_paradise.Book,
     posted_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS book_paradise.QuoteComment (
+    id SERIAL PRIMARY KEY,
+    quote_id INT REFERENCES book_paradise.Quote NOT NULL,
+    posted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    user_id INT REFERENCES book_paradise.UserInfo NOT NULL,
+    content TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS book_paradise.PortfolioBook (
@@ -90,9 +98,9 @@ AS $$
 $$;
 
 WITH pwd AS (
-    SELECT generate_series(1, 3) AS id,  UNNEST(ARRAY['$2b$12$KTguiTfEL.o3RmgyRGSASOK9ycaAMMjkiWLJbeSWGDdEwbAlG20rG',
-        '$2b$12$Akpcvgq7rW1wzSs9zaAMhuMWbQ7HbjV.u5bSk6B70pEtsL2pYp4XC',
-        '$2b$12$hU2X49aYYdNL58s.cwm5MORsi83aLsWXLwK1OzzyIR46UA.Nftavq']) AS pwd
+    SELECT generate_series(1, 3) AS id,  UNNEST(ARRAY['$2b$12$KTguiTfEL.o3RmgyRGSASOK9ycaAMMjkiWLJbeSWGDdEwbAlG20rG', -- secret
+        '$2b$12$Akpcvgq7rW1wzSs9zaAMhuMWbQ7HbjV.u5bSk6B70pEtsL2pYp4XC', -- superpassword
+        '$2b$12$hU2X49aYYdNL58s.cwm5MORsi83aLsWXLwK1OzzyIR46UA.Nftavq']) AS pwd -- password
 ), logins AS (
     SELECT generate_series(1, 3) AS id, UNNEST(ARRAY['sam-victor', 'victor', 'sam']) as log
 )
@@ -107,4 +115,6 @@ FROM (
            unnest(ARRAY['Лев Толстой', 'Джордж Оруэлл', 'Джеймс Джойс', 'Владимир Набоков', 'Уильям Фолкнер', 'Ральф Эллисон', 'Вирджиния Вулф', 'Гомер', 'Гомер', 'Данте Алигьери']) AS author
 ) as ta;
 
-table book_paradise.Book;
+INSERT INTO book_paradise.UserRight(user_from, user_to, kind)
+SELECT 1, 2, k.kind
+FROM (SELECT unnest(enum_range(NULL::book_paradise.right_kind)) as kind) as k

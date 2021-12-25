@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
-from src.python.database import db
+from database import db
 from .models.user_right import UserRight, UserRightIn
-from src.python.authentication import get_current_user
-from src.python.authentication.models.user import UserWithId
+from authentication import get_current_user
+from authentication.models.user import UserWithId
 from .service import get_authorization_service, AuthorizationService
 
 auth = APIRouter()

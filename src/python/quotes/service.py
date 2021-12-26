@@ -59,31 +59,29 @@ class QuoteServiceImpl(QuoteService):
         return await self.__quote_repository.add(Quote(**quote.dict(), user_id=user.id))
 
     async def add_replied_quote(self, user: UserWithId, replied_quote: RepliedQuoteIn):
-        if not await self.__authorization_service.is_exist(UserRight(
-            user_from=replied_quote.replied_user_id, user_to=user.id, kind='see quotes'
-        )):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail='You couldn\'t see quotes of this user'
-            )
+        await self.__check_can_see_quotes(user, replied_quote.replied_user_id)
 
         return await self.__quote_repository.add(Quote(**replied_quote.dict(), user_id=user.id))
 
     async def get_quotes_by_user_id(self, user: UserWithId, user_id: int = None):
         if not user_id:
             user_id = user.id
-        elif not await self.__authorization_service.is_exist(UserRight(
+        else:
+            await self.__check_can_see_quotes(user, user_id)
+
+        return await self.__quote_repository.get_by_user_id(user_id)
+
+    async def link_book(self, user: UserWithId, quote_id: int, book_id: int):
+        return await self.__quote_repository.add_book_to_quote(user.id, quote_id, book_id)
+
+    async def __check_can_see_quotes(self, user: UserWithId, user_id):
+        if not await self.__authorization_service.is_exist(UserRight(
             user_from=user_id, user_to=user.id, kind='see quotes'
         )):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='You couldn\'t see quotes of this user'
             )
-
-        return await self.__quote_repository.get_by_user_id(user_id)
-
-    async def link_book(self, user: UserWithId, quote_id: int, book_id: int):
-        return await self.__quote_repository.add_book_to_quote(user.id, quote_id, book_id)
 
 
 def get_quote_service(authorization_service: AuthorizationService = Depends(get_authorization_service),
